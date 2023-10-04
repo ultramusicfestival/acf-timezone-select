@@ -1,0 +1,10 @@
+{
+    "name": "ultramusicfestival/acf-timezone-select",
+    "type": "wordpress-plugin",
+    "autoload": {
+        "psr-4": {
+            "ACFTimezoneSelect\\": "classes/"
+        }
+    },
+    "require": {}
+}
