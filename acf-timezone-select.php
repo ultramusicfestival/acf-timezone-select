@@ -50,7 +50,7 @@ class ultra_acf_plugin_timezone_select {
 		
 		
 		// include field
-		add_action('acf/include_field_types', 	array($this, 'include_field')); // v5
+		add_action('acf/include_field_types', array($this, 'include_field')); // v5
 	}
 	
 	
@@ -68,17 +68,17 @@ class ultra_acf_plugin_timezone_select {
 	*/
 	
 	function include_field( $version = false ) {
-		
+
 		// support empty $version
-		if( !$version ) $version = 4;
-		
-		
+		if( !$version ) $version = 5;
+
+
 		// load textdomain
-		load_plugin_textdomain( 'TEXTDOMAIN', false, plugin_basename( dirname( __FILE__ ) ) . '/lang' ); 
+		load_plugin_textdomain( 'timezone_select', false, plugin_basename( dirname( __FILE__ ) ) . '/lang' );
 		
 		
 		// include
-		include_once('fields/class-ultra-acf-field-timezone-select-v' . $version . '.php');
+		include_once('fields/class-ultra-acf-field-timezone-select.php');
 	}
 	
 }
@@ -97,5 +97,3 @@ add_filter('acp/acf/column', function($column, $type, $settings) {
 
 // class_exists check
 endif;
-	
-?>

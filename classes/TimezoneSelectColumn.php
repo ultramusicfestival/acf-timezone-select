@@ -4,7 +4,7 @@ namespace ACFTimezoneSelect;
 
 class TimezoneSelectColumn extends \ACA\ACF\Column {
 
-    public function set_config(array $config)
+    public function set_config(array $config): void
     {
         $config[\ACA\ACF\Configurable::FIELD] = new TimezoneSelectField($config[\ACA\ACF\Configurable::FIELD]->get_settings());
         parent::set_config($config);
@@ -33,8 +33,8 @@ class TimezoneSelectColumn extends \ACA\ACF\Column {
         $choices = $this->field instanceof \ACA\ACF\Field\Choices ? $this->field->get_choices() : [];
 
         return $this->field instanceof \ACA\ACF\Field\Multiple && $this->field->is_multiple()
-            ? new \ACA\ACF\Search\Comparison\MultiSelect( $this->get_meta_key(), $this->get_meta_type(), $choices )
-            : new \ACA\ACF\Search\Comparison\Select( $this->get_meta_key(), $this->get_meta_type(), $choices );
+            ? new \ACA\ACF\Search\Comparison\MultiSelect( $this->get_meta_key(), $choices )
+            : new \ACA\ACF\Search\Comparison\Select( $this->get_meta_key(), $choices );
     }
 
     public function sorting()

@@ -9,8 +9,14 @@ if( !class_exists('ultra_acf_field_timezone_select') ) :
 
 
 class ultra_acf_field_timezone_select extends acf_field_select {
-	
-	
+
+    protected $settings;
+
+    public function __construct($settings) {
+        $this->settings = $settings;
+        parent::__construct();
+    }
+
 	/*
 	*  __construct
 	*
@@ -64,42 +70,6 @@ class ultra_acf_field_timezone_select extends acf_field_select {
         add_action( 'wp_ajax_nopriv_acf/fields/timezone_select/query', array( $this, 'ajax_query' ) );
 
     }
-	
-	
-	/*
-	*  render_field_settings()
-	*
-	*  Create extra settings for your field. These are visible when editing a field
-	*
-	*  @type	action
-	*  @since	3.6
-	*  @date	23/01/13
-	*
-	*  @param	$field (array) the $field being edited
-	*  @return	n/a
-	*/
-	
-//	function render_field_settings( $field ) {
-//
-//		/*
-//		*  acf_render_field_setting
-//		*
-//		*  This function will create a setting for your field. Simply pass the $field parameter and an array of field settings.
-//		*  The array of settings does not require a `value` or `prefix`; These settings are found from the $field array.
-//		*
-//		*  More than one setting can be added by copy/paste the above code.
-//		*  Please note that you must also have a matching $defaults value for the field name (font_size)
-//		*/
-//
-//		acf_render_field_setting( $field, array(
-//			'label'			=> __('Font Size','TEXTDOMAIN'),
-//			'instructions'	=> __('Customise the input font size','TEXTDOMAIN'),
-//			'type'			=> 'number',
-//			'name'			=> 'font_size',
-//			'prepend'		=> 'px',
-//		));
-//
-//	}
 		
 	/*
 	*  input_admin_enqueue_scripts()
@@ -115,8 +85,6 @@ class ultra_acf_field_timezone_select extends acf_field_select {
 	*  @return	n/a
 	*/
 
-	/*
-	
 	function input_admin_enqueue_scripts() {
 		
 		// vars
@@ -125,18 +93,16 @@ class ultra_acf_field_timezone_select extends acf_field_select {
 		
 		
 		// register & include JS
-		wp_register_script('TEXTDOMAIN', "{$url}assets/js/input.js", array('acf-input'), $version);
-		wp_enqueue_script('TEXTDOMAIN');
+		wp_register_script('timezone_select', "{$url}assets/js/input.js", array('acf-input'), $version);
+		wp_enqueue_script('timezone_select');
 		
 		
 		// register & include CSS
-		wp_register_style('TEXTDOMAIN', "{$url}assets/css/input.css", array('acf-input'), $version);
-		wp_enqueue_style('TEXTDOMAIN');
+//		wp_register_style('timezone_select', "{$url}assets/css/input.css", array('acf-input'), $version);
+//		wp_enqueue_style('timezone_select');
 		
 	}
-	
-	*/
-	
+
 	
 	/*
 	*  input_admin_head()
@@ -499,7 +465,14 @@ class ultra_acf_field_timezone_select extends acf_field_select {
 	
 	*/
 
-    function prepare_field($field) {
+    /**
+     * get_choices
+     *
+     * @param $field
+     *
+     * @return mixed
+     */
+    function get_choices($field){
         $regions = [
             'Africa' => \DateTimeZone::AFRICA,
             'America' => \DateTimeZone::AMERICA,
@@ -513,7 +486,7 @@ class ultra_acf_field_timezone_select extends acf_field_select {
             'Pacific' => \DateTimeZone::PACIFIC
         ];
 
-        $timezone_choices = [];
+        $choices = [];
 
         foreach ($regions as $region_name => $region) {
             $timezones = \DateTimeZone::listIdentifiers($region);
@@ -533,7 +506,7 @@ class ultra_acf_field_timezone_select extends acf_field_select {
 
                     $date_sample = (new DateTime('now', $tz))->format('H:i');
 
-                    $timezone_choices[$timezone] = "$timezone [${pretty_offset}] (${date_sample})";
+                    $choices[$timezone] = "{$timezone} [{$pretty_offset}] ({$date_sample})";
                 }
                 catch (Exception $e) {
                     // do nothing
@@ -541,7 +514,13 @@ class ultra_acf_field_timezone_select extends acf_field_select {
             }
         }
 
-        $field['choices'] = $timezone_choices;
+        // Return
+        return $choices;
+
+    }
+
+    function prepare_field($field) {
+        $field['choices'] = $this->get_choices($field);
 
         return $field;
     }
@@ -550,23 +529,10 @@ class ultra_acf_field_timezone_select extends acf_field_select {
         $offset = $timezone->getOffset($date ?: new DateTime);
         $offset_prefix = $offset < 0 ? '-' : '+';
         $offset_formatted = gmdate('H:i', abs($offset));
-        return "UTC${offset_prefix}${offset_formatted}";
+        return "UTC{$offset_prefix}{$offset_formatted}";
     }
 
-    function render_field_settings($field)
-    {
-
-        // allow_null
-        acf_render_field_setting(
-            $field,
-            array(
-                'label'        => __( 'Allow Null?', 'acf' ),
-                'instructions' => '',
-                'name'         => 'allow_null',
-                'type'         => 'true_false',
-                'ui'           => 1,
-            )
-        );
+    function render_field_settings($field) {
 
         // multiple
         acf_render_field_setting(
@@ -580,34 +546,57 @@ class ultra_acf_field_timezone_select extends acf_field_select {
             )
         );
 
-        // ui
-        acf_render_field_setting(
-            $field,
-            array(
-                'label'        => __( 'Stylised UI', 'acf' ),
-                'instructions' => '',
-                'name'         => 'ui',
-                'type'         => 'true_false',
-                'ui'           => 1,
-            )
-        );
-
-        // ajax
-        acf_render_field_setting(
-            $field,
-            array(
-                'label'        => __( 'Use AJAX to lazy load choices?', 'acf' ),
-                'instructions' => '',
-                'name'         => 'ajax',
-                'type'         => 'true_false',
-                'ui'           => 1,
-                'conditions'   => array(
-                    'field'    => 'ui',
-                    'operator' => '==',
-                    'value'    => 1,
+        // Select: Placeholder
+        acf_render_field_setting($field, array(
+            'label'             => __('Placeholder','acf'),
+            'instructions'      => __('Appears within the input','acf'),
+            'type'              => 'text',
+            'name'              => 'placeholder',
+            'placeholder'       => _x('Select', 'verb', 'acf'),
+            'conditional_logic' => array(
+                array(
+                    array(
+                        'field'     => 'ui',
+                        'operator'  => '==',
+                        'value'     => '0',
+                    ),
+                    array(
+                        'field'     => 'allow_null',
+                        'operator'  => '==',
+                        'value'     => '1',
+                    ),
+                    array(
+                        'field'     => 'multiple',
+                        'operator'  => '==',
+                        'value'     => '0',
+                    ),
+                ),
+                array(
+                    array(
+                        'field'     => 'ui',
+                        'operator'  => '==',
+                        'value'     => '1',
+                    ),
+                    array(
+                        'field'     => 'allow_null',
+                        'operator'  => '==',
+                        'value'     => '1',
+                    ),
+                ),
+                array(
+                    array(
+                        'field'     => 'ui',
+                        'operator'  => '==',
+                        'value'     => '1',
+                    ),
+                    array(
+                        'field'     => 'multiple',
+                        'operator'  => '==',
+                        'value'     => '1',
+                    ),
                 ),
             )
-        );
+        ));
 
         // return_format
         acf_render_field_setting(
@@ -626,7 +615,10 @@ class ultra_acf_field_timezone_select extends acf_field_select {
         );
     }
 
-
+    function translate_field($field) {
+        $field['placeholder'] = acf_translate($field['placeholder']);
+        return $field;
+    }
 }
 
 
@@ -636,5 +628,3 @@ new ultra_acf_field_timezone_select( $this->settings );
 
 // class_exists check
 endif;
-
-?>

@@ -1,66 +1,54 @@
 (function($){
-	
-	
-	/**
-	*  initialize_field
-	*
-	*  This function will initialize the $field.
-	*
-	*  @date	30/11/17
-	*  @since	5.6.5
-	*
-	*  @param	n/a
-	*  @return	n/a
-	*/
-	
-	function initialize_field( $field ) {
-		
-		//$field.doStuff();
-		
-	}
-	
-	
-	if( typeof acf.add_action !== 'undefined' ) {
-	
-		/*
-		*  ready & append (ACF5)
-		*
-		*  These two events are called when a field element is ready for initizliation.
-		*  - ready: on page load similar to $(document).ready()
-		*  - append: on new DOM elements appended via repeater field or other AJAX calls
-		*
-		*  @param	n/a
-		*  @return	n/a
-		*/
-		
-		acf.add_action('ready_field/type=timezone-select', initialize_field);
-		acf.add_action('append_field/type=timezone-select', initialize_field);
-		
-		
-	} else {
-		
-		/*
-		*  acf/setup_fields (ACF4)
-		*
-		*  These single event is called when a field element is ready for initizliation.
-		*
-		*  @param	event		an event object. This can be ignored
-		*  @param	element		An element which contains the new HTML
-		*  @return	n/a
-		*/
-		
-		$(document).on('acf/setup_fields', function(e, postbox){
-			
-			// find all relevant fields
-			$(postbox).find('.field[data-field_type="timezone-select"]').each(function(){
-				
-				// initialize
-				initialize_field( $(this) );
-				
-			});
-		
-		});
-	
-	}
+
+    var Field = acf.Field.extend({
+        type: 'timezone_select',
+        select2: false,
+        wait: 'load',
+        events: {
+            removeField: 'onRemove',
+            duplicateField: 'onDuplicate'
+        },
+        $input: function () {
+            return this.$('select');
+        },
+        initialize: function () {
+            // vars
+            var $select = this.$input();
+
+            // inherit data
+            this.inherit($select);
+
+            // select2
+            if (this.get('ui')) {
+                // populate ajax_data (allowing custom attribute to already exist)
+                var ajaxAction = this.get('ajax_action');
+                if (!ajaxAction) {
+                    ajaxAction = 'acf/fields/' + this.get('type') + '/query';
+                }
+
+                // select2
+                this.select2 = acf.newSelect2($select, {
+                    field: this,
+                    ajax: this.get('ajax'),
+                    multiple: this.get('multiple'),
+                    placeholder: this.get('placeholder'),
+                    allowNull: this.get('allow_null'),
+                    ajaxAction: ajaxAction
+                });
+            }
+        },
+        onRemove: function () {
+            if (this.select2) {
+                this.select2.destroy();
+            }
+        },
+        onDuplicate: function (e, $el, $duplicate) {
+            if (this.select2) {
+                $duplicate.find('.select2-container').remove();
+                $duplicate.find('select').removeClass('select2-hidden-accessible');
+            }
+        }
+    });
+    acf.registerFieldType(Field);
 
 })(jQuery);
